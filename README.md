@@ -4,3 +4,7 @@ Just for fun, code isn't pretty ;)
 * Go to https://steamcommunity.com/saliengame/gettoken
 * Put the token in `token.txt` (only the token itself, nothing else)
 * Run saliens
+
+
+# Screenshot
+![screenshot](https://snag.gy/L8QkIP.jpg)
