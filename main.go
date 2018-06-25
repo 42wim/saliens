@@ -40,6 +40,7 @@ func init() {
 		os.Exit(1)
 	}
 	token = string(res)
+	token = strings.TrimSpace(token)
 }
 
 func spost(path string, form url.Values) []byte {
