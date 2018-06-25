@@ -5,6 +5,13 @@ Just for fun, code isn't pretty ;)
 * Put the token in `token.txt` (only the token itself, nothing else)
 * Run saliens
 
+# Binaries
+[Download](https://github.com/42wim/saliens/releases/latest)
+
+# Build yourself
+Install go 1.10.x, run `go get github.com/42wim/saliens`
+
+You'll have a binary in `$HOME/go/bin/saliens`
 
 # Screenshot
 ![screenshot](https://snag.gy/L8QkIP.jpg)
