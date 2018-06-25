@@ -22,6 +22,7 @@ var (
 	selfInfo   SelfInfo
 	textPos    int
 	dMap       = map[int]int{1: 600, 2: 1200, 3: 2400, 4: 2400}
+	scoreMap   = []int{0, 1200, 2400, 4800, 12000, 30000, 72000, 180000, 450000, 1200000, 2400000, 3600000, 4800000, 6000000}
 	dName      = map[int]string{1: "easy", 2: "medium", 3: "hard", 4: "boss"}
 	pMap       map[string]PlanetDetail
 	nextPlanet string
@@ -264,7 +265,8 @@ func loop() error {
 	todoscore := nextscore - currentscore
 
 	t := fmt.Sprintf("%.2f %% done for next level\n", (float64(currentscore)/float64(nextscore))*100)
-	perc := math.Trunc(float64(currentscore) / float64(nextscore) * 100)
+	basescore := scoreMap[selfInfo.Response.Level-1]
+	perc := math.Trunc(float64(currentscore-basescore) / float64(nextscore-basescore) * 100)
 	updateGauge(0)
 	updateNextLevelGauge(int(perc))
 	printStatus(t)
