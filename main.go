@@ -140,6 +140,9 @@ func getPlanet(ID string) PlanetInfo {
 	res := sget("ITerritoryControlMinigameService/GetPlanet", "?id="+ID)
 	var planets Planets
 	json.Unmarshal(res, &planets)
+	if len(planets.Response.Planets) == 0 {
+		return PlanetInfo{}
+	}
 	planet := planets.Response.Planets[0]
 	pMap[ID] = planet
 	allZones := make(map[int][]int)
