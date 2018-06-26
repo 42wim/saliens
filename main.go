@@ -251,6 +251,8 @@ func getNext() (string, int, int) {
 }
 
 func loop() error {
+	var err error
+	planetID := ""
 	printZone("?")
 	printPlanet("?")
 	printDifficulty("?")
@@ -270,19 +272,25 @@ func loop() error {
 	updateGauge(0)
 	updateNextLevelGauge(int(perc))
 	printStatus(t)
-	leaveZone()
-	leavePlanet()
 
 	// only lookup if we're starting up, otherwise we have stuff in cache
 	if time.Since(cache) > time.Second*20 {
 		nextPlanet, nextZone, difficulty = getNext()
+		if nextPlanet != selfInfo.Response.ActivePlanet {
+			leavePlanet()
+		}
+		if strconv.Itoa(nextZone) != selfInfo.Response.ActiveZonePosition {
+			leaveZone()
+		}
 	}
-	planetID := nextPlanet
-	if planetID == "" {
-		printStatus("ERROR: no planetID found")
-		return fmt.Errorf("no planetID found")
+	planetID = nextPlanet
+	if nextPlanet != selfInfo.Response.ActivePlanet {
+		if planetID == "" {
+			printStatus("ERROR: no planetID found")
+			return fmt.Errorf("no planetID found")
+		}
+		joinPlanet(planetID)
 	}
-	joinPlanet(planetID)
 	time.Sleep(time.Millisecond * 500)
 	getSelfInfo(false)
 	if selfInfo.Response.ActivePlanet == planetID {
@@ -300,11 +308,16 @@ retryjoin:
 		time.Sleep(time.Second * 10)
 		return fmt.Errorf("retryjoin failed")
 	}
-	err := joinZone(nextZone)
-	if err != nil {
-		time.Sleep(time.Second * 5)
-		retryjoincount++
-		goto retryjoin
+	if strconv.Itoa(nextZone) != selfInfo.Response.ActiveZonePosition {
+		err := joinZone(nextZone)
+		if err != nil {
+			time.Sleep(time.Second * 5)
+			retryjoincount++
+			goto retryjoin
+		}
+	} else {
+		printStatus(fmt.Sprintf("OK: zone already %d joined", nextZone))
+
 	}
 	printZone(strconv.Itoa(nextZone))
 	printDifficulty(dName[difficulty])
