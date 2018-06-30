@@ -51,7 +51,8 @@ func init() {
 		steamID = t.Steamid
 		token = t.Token
 		accountID, err = strconv.Atoi(steamID)
-		accountID = accountID & 0xFFFFFFFF
+		account64 := int64(accountID) & 0xFFFFFFFF
+		accountID = int(account64)
 		if err != nil {
 			log.Fatal("accountid", err)
 		}
