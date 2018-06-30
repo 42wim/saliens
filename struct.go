@@ -150,3 +150,12 @@ type Boss struct {
 		WaitingForPlayers bool `json:"waiting_for_players"`
 	} `json:"response"`
 }
+
+type Token struct {
+	PersonaName      string `json:"persona_name"`
+	Steamid          string `json:"steamid"`
+	Success          int    `json:"success"`
+	Token            string `json:"token"`
+	WebapiHost       string `json:"webapi_host"`
+	WebapiHostSecure string `json:"webapi_host_secure"`
+}

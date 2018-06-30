@@ -31,6 +31,8 @@ var (
 	difficulty int
 	cache      time.Time
 	token      string
+	steamID    string
+	accountID  int
 )
 
 func init() {
@@ -43,6 +45,17 @@ func init() {
 	}
 	token = string(res)
 	token = strings.TrimSpace(token)
+	var t Token
+	json.Unmarshal(res, &t)
+	if t.Steamid != "" {
+		steamID = t.Steamid
+		token = t.Token
+		accountID, err = strconv.Atoi(steamID)
+		accountID = accountID & 0xFFFFFFFF
+		if err != nil {
+			log.Fatal("accountid", err)
+		}
+	}
 }
 
 func spost(path string, form url.Values) []byte {
