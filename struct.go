@@ -7,6 +7,7 @@ type PlanetInfo struct {
 type SelfInfo struct {
 	Response struct {
 		ActiveZoneGame     string `json:"active_zone_game"`
+		ActiveBossGame     string `json:"active_boss_game"`
 		ActiveZonePosition string `json:"active_zone_position"`
 		ActivePlanet       string `json:"active_planet"`
 		TimeOnPlanet       int    `json:"time_on_planet"`
@@ -106,5 +107,46 @@ type PlanetDetail struct {
 type Planets struct {
 	Response struct {
 		Planets []PlanetDetail `json:"planets"`
+	} `json:"response"`
+}
+
+type Boss struct {
+	Response struct {
+		BossStatus struct {
+			BossHp      int `json:"boss_hp"`
+			BossMaxHp   int `json:"boss_max_hp"`
+			BossPlayers []struct {
+				Accountid int `json:"accountid"`
+				ClanInfo  struct {
+					Accountid int    `json:"accountid"`
+					Avatar    string `json:"avatar"`
+					Name      string `json:"name"`
+					URL       string `json:"url"`
+				} `json:"clan_info"`
+				Hp             int    `json:"hp"`
+				LevelOnJoin    int    `json:"level_on_join"`
+				MaxHp          int    `json:"max_hp"`
+				Name           string `json:"name"`
+				NewLevel       int    `json:"new_level"`
+				NextLevelScore string `json:"next_level_score"`
+				Salien         struct {
+					Arms        int    `json:"arms"`
+					BodyType    int    `json:"body_type"`
+					Eyes        int    `json:"eyes"`
+					HatItemid   string `json:"hat_itemid"`
+					Legs        int    `json:"legs"`
+					Mouth       int    `json:"mouth"`
+					ShirtItemid string `json:"shirt_itemid"`
+				} `json:"salien"`
+				ScoreOnJoin  string `json:"score_on_join"`
+				TimeJoined   int    `json:"time_joined"`
+				TimeLastSeen int    `json:"time_last_seen"`
+				XpEarned     int    `json:"xp_earned"`
+			} `json:"boss_players"`
+		} `json:"boss_status"`
+		GameOver          bool `json:"game_over"`
+		NumLaserUses      int  `json:"num_laser_uses"`
+		NumTeamHeals      int  `json:"num_team_heals"`
+		WaitingForPlayers bool `json:"waiting_for_players"`
 	} `json:"response"`
 }

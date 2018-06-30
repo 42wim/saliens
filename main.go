@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -22,7 +23,7 @@ var (
 	selfInfo   SelfInfo
 	textPos    int
 	dMap       = map[int]int{1: 600, 2: 1200, 3: 2400, 4: 2400}
-	scoreMap   = []int{0, 1200, 2400, 4800, 12000, 30000, 72000, 180000, 450000, 1200000, 2400000, 3600000, 4800000, 6000000}
+	scoreMap   = []int{0, 1200, 2400, 4800, 12000, 30000, 72000, 180000, 450000, 1200000, 2400000, 3600000, 4800000, 6000000, 7200000, 8400000, 9600000, 10800000, 12000000, 14400000, 16800000, 19200000, 21600000, 24000000, 26400000}
 	dName      = map[int]string{1: "easy", 2: "medium", 3: "hard", 4: "boss"}
 	pMap       map[string]PlanetDetail
 	nextPlanet string
@@ -108,6 +109,10 @@ func leaveZone() {
 		printStatus("leaving zone " + selfInfo.Response.ActiveZoneGame)
 		spost("IMiniGameService/LeaveGame", url.Values{"gameid": []string{selfInfo.Response.ActiveZoneGame}})
 	}
+	if selfInfo.Response.ActiveBossGame != "" {
+		printStatus("leaving boss zone " + selfInfo.Response.ActiveZoneGame)
+		spost("IMiniGameService/LeaveGame", url.Values{"gameid": []string{selfInfo.Response.ActiveBossGame}})
+	}
 }
 
 func joinZone(pos int) error {
@@ -120,6 +125,23 @@ func joinZone(pos int) error {
 		return fmt.Errorf("failed")
 	}
 	printStatus(fmt.Sprintf("OK: zone %d joined", pos))
+	printZoneCapture(strconv.Itoa(int(math.Trunc(zoneinfo.Response.ZoneInfo.CaptureProgress*100))) + "%")
+	return nil
+}
+
+func joinBossZone(pos int) error {
+	printStatus(fmt.Sprintf("joining zone %d", pos))
+	res := spost("ITerritoryControlMinigameService/JoinBossZone", url.Values{"zone_position": []string{strconv.Itoa(pos)}})
+	var zoneinfo ZoneInfo
+	json.Unmarshal(res, &zoneinfo)
+	printStatus(fmt.Sprintf("%#v", zoneinfo.Response))
+	/*
+	   if zoneinfo.Response.ZoneInfo.ZonePosition == 0 {
+	           printStatus(fmt.Sprintf("ERROR: bosszone %d failed", pos))
+	           return fmt.Errorf("failed")
+	   }
+	*/
+	printStatus(fmt.Sprintf("OK: bosszone %d joined", pos))
 	printZoneCapture(strconv.Itoa(int(math.Trunc(zoneinfo.Response.ZoneInfo.CaptureProgress*100))) + "%")
 	return nil
 }
@@ -235,6 +257,38 @@ func reportScore(addscore int) error {
 	return nil
 }
 
+func random(min, max int) int {
+	rand.Seed(time.Now().Unix())
+	return rand.Intn(max-min) + min
+}
+
+func fightBoss() error {
+	var boss Boss
+	waitcount := 0
+	res := spost("ITerritoryControlMinigameService/ReportBossDamage", url.Values{"use_heal_ability": []string{strconv.Itoa(0)}, "damage_to_boss": []string{strconv.Itoa(0)}, "damage_taken": []string{strconv.Itoa(0)}})
+	json.Unmarshal(res, &boss)
+	for boss.Response.WaitingForPlayers == true {
+		printStatus("OK: boss: waiting for players " + strconv.Itoa(waitcount))
+		time.Sleep(time.Second * 5)
+		res := spost("ITerritoryControlMinigameService/ReportBossDamage", url.Values{"use_heal_ability": []string{strconv.Itoa(0)}, "damage_to_boss": []string{strconv.Itoa(0)}, "damage_taken": []string{strconv.Itoa(0)}})
+		json.Unmarshal(res, &boss)
+		waitcount++
+		if waitcount == 5 {
+			printStatus("ERROR: waiting to long for players, returning")
+			return fmt.Errorf("waiting to long for players, returning")
+		}
+	}
+	waitcount = 0
+	for boss.Response.GameOver == false && boss.Response.BossStatus.BossMaxHp != 0 {
+		printStatus("OK: boss: updating score " + strconv.Itoa(waitcount))
+		res := spost("ITerritoryControlMinigameService/ReportBossDamage", url.Values{"use_heal_ability": []string{strconv.Itoa(0)}, "damage_to_boss": []string{strconv.Itoa(random(40, 90))}, "damage_taken": []string{strconv.Itoa(0)}})
+		json.Unmarshal(res, &boss)
+		time.Sleep(time.Second * 5)
+		waitcount++
+	}
+	return nil
+}
+
 func getNext() (string, int, int) {
 	nextPlanet := getUncapturedPlanets()
 	nextZone := 0
@@ -312,7 +366,12 @@ retryjoin:
 		return fmt.Errorf("retryjoin failed")
 	}
 	if strconv.Itoa(nextZone) != selfInfo.Response.ActiveZonePosition {
-		err := joinZone(nextZone)
+		var err error
+		if difficulty == 4 {
+			err = joinBossZone(nextZone)
+		} else {
+			err = joinZone(nextZone)
+		}
 		if err != nil {
 			time.Sleep(time.Second * 5)
 			retryjoincount++
@@ -320,11 +379,14 @@ retryjoin:
 		}
 	} else {
 		printStatus(fmt.Sprintf("OK: zone already %d joined", nextZone))
-
 	}
 	printZone(strconv.Itoa(nextZone))
 	printDifficulty(dName[difficulty])
 	printCapture(strconv.Itoa(int(math.Trunc(pMap[planetID].State.CaptureProgress*100))) + "%")
+	if difficulty == 4 {
+		printStatus("OK: start fighting boss")
+		return fightBoss()
+	}
 	ticker := time.NewTicker(1 * time.Second)
 	go func(difficulty int) {
 		i := 0
