@@ -291,11 +291,38 @@ func fightBoss() error {
 			return fmt.Errorf("waiting to long for players, returning")
 		}
 	}
-	waitcount = 0
+	waitcount = 1
 	for boss.Response.GameOver == false && boss.Response.BossStatus.BossMaxHp != 0 {
 		printStatus("OK: boss: updating score " + strconv.Itoa(waitcount))
 		res := spost("ITerritoryControlMinigameService/ReportBossDamage", url.Values{"use_heal_ability": []string{strconv.Itoa(0)}, "damage_to_boss": []string{strconv.Itoa(random(40, 90))}, "damage_taken": []string{strconv.Itoa(0)}})
 		json.Unmarshal(res, &boss)
+		bossMax := boss.Response.BossStatus.BossMaxHp
+		bossHP := boss.Response.BossStatus.BossHp
+		perc := int(math.Trunc(float64(bossMax-bossHP) / float64(bossMax) * 100))
+		for _, p := range boss.Response.BossStatus.BossPlayers {
+			if p.Accountid == accountID {
+				oldscore, err := strconv.Atoi(p.ScoreOnJoin)
+				if err != nil {
+					break
+				}
+				currentscore := oldscore + p.XpEarned
+				nextscore, err := strconv.Atoi(p.NextLevelScore)
+				if err != nil {
+					break
+				}
+				printScore(strconv.Itoa(currentscore))
+				basescore := scoreMap[selfInfo.Response.Level-1]
+				perc := math.Trunc(float64(currentscore-basescore) / float64(nextscore-basescore) * 100)
+				updateNextLevelGauge(int(perc))
+				todoscore := nextscore - currentscore
+				rate := float64(p.XpEarned) / float64(waitcount*5)
+				printNextLevel(strconv.Itoa(todoscore/int(rate)) + "s")
+				bossrate := float64(bossMax-bossHP) / float64(waitcount*5)
+				printNextGrind(strconv.Itoa(int(bossrate)) + "s")
+				break
+			}
+		}
+		updateBossGauge(perc)
 		time.Sleep(time.Second * 5)
 		waitcount++
 	}
@@ -392,6 +419,7 @@ retryjoin:
 		}
 	} else {
 		printStatus(fmt.Sprintf("OK: zone already %d joined", nextZone))
+		refreshPlanetInfo()
 	}
 	printZone(strconv.Itoa(nextZone))
 	printDifficulty(dName[difficulty])

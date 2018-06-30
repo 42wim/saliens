@@ -74,6 +74,10 @@ func updateNextLevelGauge(percent int) {
 	printGauge("Next Level", percent, 40, 0, 9)
 }
 
+func updateBossGauge(percent int) {
+	printGauge("Fighting boss", percent, 40, 0, 6)
+}
+
 func printGauge(label string, percent, width, x, y int) {
 	g0 := termui.NewGauge()
 	g0.Percent = percent
